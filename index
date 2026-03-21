@@ -1,0 +1,327 @@
+import React, { useMemo, useState } from "react";
+import { motion } from "framer-motion";
+import { Plus, BookOpen, Lightbulb, MessageSquare, Search, Filter, Pin } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+
+const seedPosts = [
+  {
+    id: 1,
+    name: "Maya",
+    category: "facts",
+    title: "What I learned about span of control",
+    content:
+      "A manager can only supervise effectively up to a certain point before communication and feedback start to suffer.",
+    classTag: "Class 4",
+    pinned: true,
+    likes: 4,
+  },
+  {
+    id: 2,
+    name: "Diego",
+    category: "concepts",
+    title: "Psychological safety matters",
+    content:
+      "Teams contribute more honestly when people believe they can speak up without being punished or embarrassed.",
+    classTag: "Class 4",
+    pinned: false,
+    likes: 7,
+  },
+  {
+    id: 3,
+    name: "Rhea",
+    category: "general",
+    title: "My takeaway",
+    content:
+      "I realized that disagreement can improve decisions when the team handles it well instead of avoiding it.",
+    classTag: "Class 4",
+    pinned: false,
+    likes: 3,
+  },
+];
+
+const categoryConfig = {
+  facts: {
+    label: "Facts",
+    icon: BookOpen,
+    helper: "Specific information, examples, or details from class.",
+  },
+  concepts: {
+    label: "Concepts",
+    icon: Lightbulb,
+    helper: "Ideas, frameworks, and principles you now understand better.",
+  },
+  general: {
+    label: "General",
+    icon: MessageSquare,
+    helper: "Reflections, questions, connections, or broader takeaways.",
+  },
+};
+
+export default function StudentLearningBulletinBoard() {
+  const [posts, setPosts] = useState(seedPosts);
+  const [activeCategory, setActiveCategory] = useState("all");
+  const [search, setSearch] = useState("");
+  const [form, setForm] = useState({
+    name: "",
+    isAnonymous: false,
+    category: "facts",
+    title: "",
+    content: "",
+    classTag: "Class 5",
+  });
+
+  const filteredPosts = useMemo(() => {
+    return posts
+      .filter((post) => activeCategory === "all" || post.category === activeCategory)
+      .filter((post) => {
+        const haystack = `${post.name} ${post.title} ${post.content} ${post.classTag}`.toLowerCase();
+        return haystack.includes(search.toLowerCase());
+      })
+      .sort((a, b) => Number(b.pinned) - Number(a.pinned) || b.id - a.id);
+  }, [posts, activeCategory, search]);
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if ((!form.isAnonymous && !form.name) || !form.title || !form.content) return;
+
+    const newPost = {
+      id: Date.now(),
+      ...form,
+      name: form.isAnonymous ? "Anonymous" : form.name,
+      pinned: false,
+      likes: 0,
+    };
+
+    setPosts((prev) => [newPost, ...prev]);
+    setForm({
+      name: "",
+      isAnonymous: false,
+      category: "facts",
+      title: "",
+      content: "",
+      classTag: form.classTag,
+    });
+  };
+
+  const handleLike = (id) => {
+    setPosts((prev) => prev.map((post) => (post.id === id ? { ...post, likes: post.likes + 1 } : post)));
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-50 p-6 md:p-10">
+      <div className="mx-auto max-w-7xl">
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-8 grid gap-4 rounded-3xl bg-white p-6 shadow-sm md:grid-cols-[1.6fr_0.9fr]"
+        >
+          <div>
+            <p className="mb-2 text-sm uppercase tracking-wide text-slate-500">Class Learning Board</p>
+            <h1 className="text-3xl font-semibold tracking-tight text-slate-900 md:text-4xl">
+              Share what you learned after class
+            </h1>
+            <p className="mt-3 max-w-2xl text-base text-slate-600">
+              Students can post one takeaway after each class and browse what others noticed, understood, or questioned.
+            </p>
+          </div>
+          <div className="grid grid-cols-3 gap-3">
+            {Object.entries(categoryConfig).map(([key, value]) => {
+              const Icon = value.icon;
+              return (
+                <Card key={key} className="rounded-2xl border-0 shadow-sm">
+                  <CardContent className="flex h-full flex-col items-center justify-center p-4 text-center">
+                    <Icon className="mb-2 h-5 w-5" />
+                    <div className="text-sm font-medium">{value.label}</div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        </motion.div>
+
+        <div className="grid gap-6 lg:grid-cols-[380px_1fr]">
+          <motion.div initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }}>
+            <Card className="rounded-3xl border-0 shadow-sm">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-xl">
+                  <Plus className="h-5 w-5" />
+                  Submit your learning
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <div>
+                    <label className="mb-1 block text-sm font-medium text-slate-700">Your name</label>
+                    <Input
+                      value={form.name}
+                      onChange={(e) => setForm({ ...form, name: e.target.value })}
+                      placeholder="Enter your name"
+                      disabled={form.isAnonymous}
+                      className="rounded-xl"
+                    />
+                    <label className="mt-3 flex items-center gap-2 text-sm text-slate-600">
+                      <input
+                        type="checkbox"
+                        checked={form.isAnonymous}
+                        onChange={(e) =>
+                          setForm({
+                            ...form,
+                            isAnonymous: e.target.checked,
+                            name: e.target.checked ? "" : form.name,
+                          })
+                        }
+                        className="h-4 w-4 rounded border-slate-300"
+                      />
+                      Post anonymously
+                    </label>
+                  </div>
+
+                  <div>
+                    <label className="mb-1 block text-sm font-medium text-slate-700">Category</label>
+                    <div className="grid grid-cols-3 gap-2">
+                      {Object.entries(categoryConfig).map(([key, value]) => {
+                        const Icon = value.icon;
+                        const active = form.category === key;
+                        return (
+                          <button
+                            key={key}
+                            type="button"
+                            onClick={() => setForm({ ...form, category: key })}
+                            className={`rounded-2xl border p-3 text-left transition ${
+                              active ? "border-slate-900 bg-slate-900 text-white" : "border-slate-200 bg-white hover:bg-slate-50"
+                            }`}
+                          >
+                            <Icon className="mb-2 h-4 w-4" />
+                            <div className="text-sm font-medium">{value.label}</div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <p className="mt-2 text-xs text-slate-500">{categoryConfig[form.category].helper}</p>
+                  </div>
+
+                  <div>
+                    <label className="mb-1 block text-sm font-medium text-slate-700">Short title</label>
+                    <Input
+                      value={form.title}
+                      onChange={(e) => setForm({ ...form, title: e.target.value })}
+                      placeholder="What did you learn?"
+                      className="rounded-xl"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-1 block text-sm font-medium text-slate-700">Your post</label>
+                    <Textarea
+                      value={form.content}
+                      onChange={(e) => setForm({ ...form, content: e.target.value })}
+                      placeholder="Share one useful takeaway from class"
+                      className="min-h-[140px] rounded-xl"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-1 block text-sm font-medium text-slate-700">Class label</label>
+                    <Input
+                      value={form.classTag}
+                      onChange={(e) => setForm({ ...form, classTag: e.target.value })}
+                      placeholder="Class 5"
+                      className="rounded-xl"
+                    />
+                  </div>
+
+                  <Button type="submit" className="w-full rounded-2xl py-6 text-base">
+                    Post to board
+                  </Button>
+                </form>
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          <motion.div initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} className="space-y-4">
+            <Card className="rounded-3xl border-0 shadow-sm">
+              <CardContent className="flex flex-col gap-4 p-4 md:flex-row md:items-center md:justify-between">
+                <div className="relative w-full md:max-w-sm">
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                  <Input
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    placeholder="Search posts"
+                    className="rounded-xl pl-9"
+                  />
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <Filter className="h-4 w-4 text-slate-500" />
+                  <Tabs value={activeCategory} onValueChange={setActiveCategory}>
+                    <TabsList className="rounded-2xl">
+                      <TabsTrigger value="all">All</TabsTrigger>
+                      <TabsTrigger value="facts">Facts</TabsTrigger>
+                      <TabsTrigger value="concepts">Concepts</TabsTrigger>
+                      <TabsTrigger value="general">General</TabsTrigger>
+                    </TabsList>
+                  </Tabs>
+                </div>
+              </CardContent>
+            </Card>
+
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              {filteredPosts.map((post) => {
+                const config = categoryConfig[post.category];
+                const Icon = config.icon;
+                return (
+                  <motion.div key={post.id} layout initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+                    <Card className="h-full rounded-3xl border-0 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+                      <CardContent className="flex h-full flex-col p-5">
+                        <div className="mb-3 flex items-start justify-between gap-3">
+                          <div className="flex items-center gap-2">
+                            <div className="rounded-xl bg-slate-100 p-2">
+                              <Icon className="h-4 w-4" />
+                            </div>
+                            <div>
+                              <div className="text-sm font-medium text-slate-900">{post.name}</div>
+                              <div className="text-xs text-slate-500">{post.classTag}</div>
+                            </div>
+                          </div>
+                          {post.pinned && (
+                            <Badge variant="secondary" className="rounded-full">
+                              <Pin className="mr-1 h-3 w-3" /> Pinned
+                            </Badge>
+                          )}
+                        </div>
+
+                        <div className="mb-2 flex items-center gap-2">
+                          <Badge className="rounded-full bg-slate-900 text-white hover:bg-slate-900">{config.label}</Badge>
+                        </div>
+
+                        <h3 className="mb-2 text-lg font-semibold text-slate-900">{post.title}</h3>
+                        <p className="flex-1 text-sm leading-6 text-slate-600">{post.content}</p>
+
+                        <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-4">
+                          <button
+                            onClick={() => handleLike(post.id)}
+                            className="rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-700 transition hover:bg-slate-50"
+                          >
+                            Helpful · {post.likes}
+                          </button>
+                          <button className="rounded-xl px-3 py-2 text-sm text-slate-500 transition hover:bg-slate-50">
+                            View thread
+                          </button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                );
+              })}
+            </div>
+          </motion.div>
+        </div>
+      </div>
+    </div>
+  );
+}
