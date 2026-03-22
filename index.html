@@ -1,131 +1,324 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>Learning Log Bulletin Board</title>
-
-<style>
-body{
-  font-family: Arial, sans-serif;
-  margin: 40px;
-  background: #f4f6fb;
-  color: #111827;
-}
-
-h1{
-  margin-bottom: 12px;
-}
-
-.controls{
-  display: flex;
-  gap: 12px;
-  align-items: center;
-  margin-bottom: 20px;
-  flex-wrap: wrap;
-}
-
-a.button, button{
-  background: #4f46e5;
-  color: white;
-  border: none;
-  padding: 10px 14px;
-  border-radius: 8px;
-  text-decoration: none;
-  cursor: pointer;
-  font: inherit;
-}
-
-.post{
-  background: white;
-  padding: 16px;
-  margin-bottom: 12px;
-  border-radius: 10px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-}
-
-.meta{
-  color: #6b7280;
-  font-size: 14px;
-  margin-top: 4px;
-  margin-bottom: 10px;
-}
-
-.empty{
-  background: white;
-  padding: 20px;
-  border-radius: 10px;
-  color: #6b7280;
-}
-</style>
-
-</head>
-
-<body>
-
-<h1>Learning Log Bulletin Board</h1>
-
-<div class="controls">
-  <a class="button"
-     href="https://docs.google.com/forms/d/e/1FAIpQLSex8uS3e_XUzpGhmWhphMmXw8lIXoYnIhINsqQaVvsI6FrAWA/viewform?usp=publish-editor"
-     target="_blank"
-     rel="noopener">
-     Submit Learning
-  </a>
-
-  <button onclick="load()">Refresh</button>
-</div>
-
-<div id="board"></div>
-
-<script>
-const API_URL = "https://script.googleusercontent.com/macros/echo?user_content_key=AWDtjMXdUfDdLo4-wFavYP5d4nvnESeZ7hI4XvhaRYQ2dFvvE8-h_qfhBdftqGys2PB7zjfbBKyAzM722R45zI6iEkPXLrOq6jUH92fWdKJV2XKwiOgSbaviuWAiiiv-WomwzR-eHkdYs6c1wRRsjsTBOFMybgXcQdAN5ufzatMdWxoxHXT0Ul2QlphJn6KGHt7ypiPlv_gVALWGa2V9X5IzMFtRRSzQRgF3wM7p5RofeBe_tIQKZdGluIBCOd2-OYPt467UkFwc8htgGcP_RhcvfSX38YDqTw&lib=MutSIXlBk5r0tY7jz0PbPDMVe6tFvFPmZ";
-
-function escapeHtml(text){
-  return String(text)
-    .replaceAll("&","&amp;")
-    .replaceAll("<","&lt;")
-    .replaceAll(">","&gt;")
-    .replaceAll('"',"&quot;")
-    .replaceAll("'","&#39;");
-}
-
-function formatDateTime(value){
-  if(!value) return "";
-  return new Date(value).toLocaleString();
-}
-
-async function load(){
-  try {
-    const res = await fetch(API_URL + "&t=" + Date.now());
-    const data = await res.json();
-
-    const div = document.getElementById("board");
-
-    if(!data.rows || !data.rows.length){
-      div.innerHTML = '<div class="empty">No responses yet.</div>';
-      return;
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Class Learning Board</title>
+  <style>
+    :root{
+      --bg:#eef3fb;
+      --text:#1c2740;
+      --muted:#5b667a;
+      --card:#ffffff;
+      --line:#dbe5f2;
+      --blue:#3b82f6;
+      --blue-soft:#dbeafe;
+      --green:#16a34a;
+      --green-soft:#dcfce7;
+      --purple:#7c3aed;
+      --purple-soft:#ede9fe;
+      --shadow:0 8px 24px rgba(15,23,42,.08);
+      --radius:22px;
     }
 
-    const rows = [...data.rows].sort(
-      (a,b) => new Date(b.timestamp) - new Date(a.timestamp)
-    );
+    *{box-sizing:border-box}
 
-    div.innerHTML = rows.map(r => `
-      <div class="post">
-        <div><strong>${escapeHtml(r.displayName || "Anonymous")}</strong></div>
-        <div class="meta">${formatDateTime(r.timestamp)}</div>
-        <div>${escapeHtml(r.response || "")}</div>
+    body{
+      margin:0;
+      font-family: Arial, sans-serif;
+      background:var(--bg);
+      color:var(--text);
+    }
+
+    .wrap{
+      max-width:1200px;
+      margin:0 auto;
+      padding:32px 24px 56px;
+    }
+
+    .hero{
+      margin-bottom:28px;
+    }
+
+    .hero-top{
+      display:flex;
+      align-items:center;
+      gap:18px;
+      margin-bottom:10px;
+    }
+
+    .icon{
+      width:54px;
+      height:54px;
+      border-radius:14px;
+      background:var(--blue-soft);
+      color:var(--blue);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size:30px;
+      flex:0 0 auto;
+    }
+
+    h1{
+      margin:0;
+      font-size:clamp(2rem, 4vw, 4rem);
+      line-height:1.02;
+      letter-spacing:-0.03em;
+    }
+
+    .subtitle{
+      margin:0 0 24px 0;
+      color:var(--muted);
+      font-size:clamp(1rem, 2vw, 1.2rem);
+    }
+
+    .controls{
+      display:flex;
+      gap:12px;
+      flex-wrap:wrap;
+      margin-bottom:28px;
+    }
+
+    .btn{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      text-decoration:none;
+      border:none;
+      cursor:pointer;
+      padding:14px 20px;
+      border-radius:16px;
+      font:inherit;
+      font-weight:700;
+      box-shadow:var(--shadow);
+    }
+
+    .btn-primary{
+      background:#4f46e5;
+      color:white;
+    }
+
+    .btn-secondary{
+      background:white;
+      color:var(--text);
+      border:1px solid var(--line);
+    }
+
+    .date-section{
+      margin-bottom:34px;
+    }
+
+    .date-heading{
+      font-size:2rem;
+      margin:0 0 18px 0;
+      letter-spacing:-0.02em;
+    }
+
+    .topic-block{
+      margin-bottom:22px;
+    }
+
+    .topic-heading{
+      margin:0 0 12px 2px;
+      font-size:1.15rem;
+      color:var(--muted);
+    }
+
+    .cards{
+      display:grid;
+      grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));
+      gap:16px;
+    }
+
+    .card{
+      background:var(--card);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      border:3px solid transparent;
+      padding:22px 22px 18px;
+      min-height:180px;
+    }
+
+    .card.factlike{
+      background:var(--green-soft);
+      border-color:#86efac;
+    }
+
+    .card.conceptlike{
+      background:var(--purple-soft);
+      border-color:#c4b5fd;
+    }
+
+    .card.general{
+      background:var(--blue-soft);
+      border-color:#93c5fd;
+    }
+
+    .card-top{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      margin-bottom:22px;
+    }
+
+    .tag{
+      font-size:.95rem;
+      font-weight:800;
+      letter-spacing:.03em;
+      text-transform:uppercase;
+    }
+
+    .date-mini{
+      color:var(--muted);
+      font-size:.95rem;
+      font-weight:600;
+      white-space:nowrap;
+    }
+
+    .response{
+      font-size:1.1rem;
+      line-height:1.45;
+      margin:0;
+    }
+
+    .empty{
+      background:white;
+      border-radius:20px;
+      padding:24px;
+      color:var(--muted);
+      box-shadow:var(--shadow);
+    }
+
+    @media (max-width:700px){
+      .wrap{padding:22px 16px 40px}
+      .hero-top{align-items:flex-start}
+      .icon{width:46px;height:46px;font-size:26px}
+      .date-heading{font-size:1.5rem}
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <section class="hero">
+      <div class="hero-top">
+        <div class="icon">📘</div>
+        <h1>Class Learning Board</h1>
       </div>
-    `).join("");
-  } catch (err) {
-    document.getElementById("board").innerHTML =
-      '<div class="empty">Could not load responses.</div>';
-    console.error(err);
-  }
-}
+      <p class="subtitle">Share your insights and discover what your classmates learned.</p>
+      <div class="controls">
+        <a class="btn btn-primary" href="https://docs.google.com/forms/d/e/1FAIpQLSex8uS3e_XUzpGhmWhphMmXw8lIXoYnIhINsqQaVvsI6FrAWA/viewform?usp=publish-editor" target="_blank" rel="noopener">Share Learning</a>
+        <button class="btn btn-secondary" onclick="loadBoard()">Refresh</button>
+      </div>
+    </section>
 
-load();
-</script>
+    <main id="board"></main>
+  </div>
 
+  <script>
+    const API_URL = "https://script.google.com/macros/s/AKfycbxpKEZPTBlzk-extw5bN6axshVeeLuB8EWRJufLvEAvMGVpgixFkiuRxIoGrM3YNqMm/exec";
+
+    function escapeHtml(text){
+      return String(text || "")
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#39;");
+    }
+
+    function formatLongDate(isoString){
+      const d = new Date(isoString);
+      return d.toLocaleDateString(undefined, {
+        weekday: "long",
+        month: "long",
+        day: "numeric",
+        year: "numeric"
+      });
+    }
+
+    function formatShortDate(isoString){
+      const d = new Date(isoString);
+      return d.toLocaleDateString();
+    }
+
+    function classifyTopic(topic){
+      const t = (topic || "").toLowerCase();
+      if (t.includes("fact") || t.includes("data") || t.includes("history")) return "factlike";
+      if (t.includes("concept") || t.includes("theory") || t.includes("idea") || t.includes("framework")) return "conceptlike";
+      return "general";
+    }
+
+    function groupRows(rows){
+      const byDate = {};
+
+      rows.forEach(row => {
+        const dateKey = row.timestamp ? row.timestamp.slice(0,10) : "unknown";
+        if (!byDate[dateKey]) byDate[dateKey] = [];
+        byDate[dateKey].push(row);
+      });
+
+      return Object.entries(byDate)
+        .sort((a,b) => b[0].localeCompare(a[0]))
+        .map(([dateKey, dateRows]) => {
+          const byTopic = {};
+          dateRows.forEach(row => {
+            const topic = row.topic || "Other";
+            if (!byTopic[topic]) byTopic[topic] = [];
+            byTopic[topic].push(row);
+          });
+
+          const topics = Object.entries(byTopic).sort((a,b) => a[0].localeCompare(b[0]));
+          return { dateKey, rows: dateRows, topics };
+        });
+    }
+
+    async function loadBoard(){
+      const board = document.getElementById("board");
+
+      try{
+        const res = await fetch(API_URL + "?t=" + Date.now());
+        const data = await res.json();
+        const rows = Array.isArray(data.rows) ? data.rows : [];
+
+        if (!rows.length){
+          board.innerHTML = '<div class="empty">No responses yet.</div>';
+          return;
+        }
+
+        const grouped = groupRows(rows);
+
+        board.innerHTML = grouped.map(day => `
+          <section class="date-section">
+            <h2 class="date-heading">${escapeHtml(formatLongDate(day.rows[0].timestamp))}</h2>
+            ${day.topics.map(([topic, topicRows]) => `
+              <div class="topic-block">
+                <h3 class="topic-heading">${escapeHtml(topic)}</h3>
+                <div class="cards">
+                  ${topicRows
+                    .sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp))
+                    .map(row => `
+                      <article class="card ${classifyTopic(topic)}">
+                        <div class="card-top">
+                          <div class="tag">${escapeHtml(topic)}</div>
+                          <div class="date-mini">${escapeHtml(formatShortDate(row.timestamp))}</div>
+                        </div>
+                        <p class="response">${escapeHtml(row.response)}</p>
+                      </article>
+                    `).join("")}
+                </div>
+              </div>
+            `).join("")}
+          </section>
+        `).join("");
+      } catch (err){
+        console.error(err);
+        board.innerHTML = '<div class="empty">Could not load responses.</div>';
+      }
+    }
+
+    loadBoard();
+  </script>
 </body>
 </html>
