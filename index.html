@@ -2,47 +2,129 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Learning Log Board</title>
+<title>Learning Log Bulletin Board</title>
+
 <style>
-body{font-family:Arial;margin:40px;background:#f4f6fb}
-.post{background:white;padding:15px;margin-bottom:12px;border-radius:8px}
-.meta{color:gray;font-size:12px;margin-bottom:8px}
+body{
+  font-family: Arial, sans-serif;
+  margin: 40px;
+  background: #f4f6fb;
+  color: #111827;
+}
+
+h1{
+  margin-bottom: 12px;
+}
+
+.controls{
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+a.button, button{
+  background: #4f46e5;
+  color: white;
+  border: none;
+  padding: 10px 14px;
+  border-radius: 8px;
+  text-decoration: none;
+  cursor: pointer;
+  font: inherit;
+}
+
+.post{
+  background: white;
+  padding: 16px;
+  margin-bottom: 12px;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+.meta{
+  color: #6b7280;
+  font-size: 14px;
+  margin-top: 4px;
+  margin-bottom: 10px;
+}
+
+.empty{
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+  color: #6b7280;
+}
 </style>
+
 </head>
+
 <body>
 
 <h1>Learning Log Bulletin Board</h1>
 
-<a href="https://docs.google.com/forms/d/e/1FAIpQLSex8uS3e_XUzpGhmWhphMmXw8lIXoYnIhINsqQaVvsI6FrAWA/viewform?usp=publish-editor" target="_blank">
-Submit Learning
-</a>
+<div class="controls">
+  <a class="button"
+     href="https://docs.google.com/forms/d/e/1FAIpQLSex8uS3e_XUzpGhmWhphMmXw8lIXoYnIhINsqQaVvsI6FrAWA/viewform?usp=publish-editor"
+     target="_blank"
+     rel="noopener">
+     Submit Learning
+  </a>
 
-<button onclick="load()">Refresh</button>
+  <button onclick="load()">Refresh</button>
+</div>
 
 <div id="board"></div>
 
 <script>
+const API_URL = "https://script.googleusercontent.com/macros/echo?user_content_key=AWDtjMXdUfDdLo4-wFavYP5d4nvnESeZ7hI4XvhaRYQ2dFvvE8-h_qfhBdftqGys2PB7zjfbBKyAzM722R45zI6iEkPXLrOq6jUH92fWdKJV2XKwiOgSbaviuWAiiiv-WomwzR-eHkdYs6c1wRRsjsTBOFMybgXcQdAN5ufzatMdWxoxHXT0Ul2QlphJn6KGHt7ypiPlv_gVALWGa2V9X5IzMFtRRSzQRgF3wM7p5RofeBe_tIQKZdGluIBCOd2-OYPt467UkFwc8htgGcP_RhcvfSX38YDqTw&lib=MutSIXlBk5r0tY7jz0PbPDMVe6tFvFPmZ";
+
+function escapeHtml(text){
+  return String(text)
+    .replaceAll("&","&amp;")
+    .replaceAll("<","&lt;")
+    .replaceAll(">","&gt;")
+    .replaceAll('"',"&quot;")
+    .replaceAll("'","&#39;");
+}
+
+function formatDateTime(value){
+  if(!value) return "";
+  return new Date(value).toLocaleString();
+}
 
 async function load(){
-const res = await fetch("https://script.google.com/macros/s/AKfycby-pOppZjaIj8Z2RRlvOQ0dhbsloCoUoAV-lslldK3sLjZrdNnKd7mof8C7P52Ct26v/exec");
-const data = await res.json();
+  try {
+    const res = await fetch(API_URL + "&t=" + Date.now());
+    const data = await res.json();
 
-const div = document.getElementById("board");
+    const div = document.getElementById("board");
 
-div.innerHTML = data.rows
-.reverse()
-.map(r => `
-<div class="post">
-<div><strong>${r.displayName}</strong></div>
-<div class="meta">${new Date(r.timestamp).toLocaleString()}</div>
-<div>${r.response}</div>
-</div>
-`).join("");
+    if(!data.rows || !data.rows.length){
+      div.innerHTML = '<div class="empty">No responses yet.</div>';
+      return;
+    }
 
+    const rows = [...data.rows].sort(
+      (a,b) => new Date(b.timestamp) - new Date(a.timestamp)
+    );
+
+    div.innerHTML = rows.map(r => `
+      <div class="post">
+        <div><strong>${escapeHtml(r.displayName || "Anonymous")}</strong></div>
+        <div class="meta">${formatDateTime(r.timestamp)}</div>
+        <div>${escapeHtml(r.response || "")}</div>
+      </div>
+    `).join("");
+  } catch (err) {
+    document.getElementById("board").innerHTML =
+      '<div class="empty">Could not load responses.</div>';
+    console.error(err);
+  }
 }
 
 load();
-
 </script>
 
 </body>
